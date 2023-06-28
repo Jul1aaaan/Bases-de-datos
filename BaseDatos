@@ -1,0 +1,582 @@
+create database TpBasesDatos1
+
+use TpBasesDatos1
+
+CREATE TABLE PERSONAL_MEDICO(
+	ID_MEDICOS INT NOT NULL,
+	NOMBRE_PERSONAL VARCHAR(20) NOT NULL,
+	PROFESION VARCHAR(50) NOT NULL,
+	GENERO CHAR(1) NOT NULL,
+	FECHA_INCORPORACION DATE NOT NULL,
+	CONSTRAINT PK_PERSONAL PRIMARY KEY (ID_MEDICOS),
+	CONSTRAINT CK_PERSONAL CHECK (ID_MEDICOS >= 0 AND ID_MEDICOS <=9999),
+	CONSTRAINT CK_NOMBRE CHECK (NOMBRE_PERSONAL LIKE '%[^a-zA-Z]%'),
+	CONSTRAINT CK_PROFESION CHECK (PROFESION IN ('MEDICO GENERAL', 'MEDICO ESPECIALISTA', 'ENFERMERA')),
+	CONSTRAINT CK_GENERO CHECK (GENERO IN ('M','F','N'))
+	)
+
+CREATE TABLE PACIENTES(
+	ID_PACIENTES INT NOT NULL,
+	NOMBRE_PACIENTE VARCHAR(20) NOT NULL,
+	EDAD INT NOT NULL,
+	N_SS VARCHAR(40) UNIQUE NOT NULL,
+	DIRECCION VARCHAR(40) NOT NULL,
+	TELEFONO INT NOT NULL,
+	TELEFONO_CELULAR INT,
+	EMAIL VARCHAR(50),
+	GENERO CHAR(1) NOT NULL,
+	CONSTRAINT PK_PACIENTE PRIMARY KEY (ID_PACIENTES),
+	CONSTRAINT CK_PACIENTE CHECK(ID_PACIENTES >= 0 AND ID_PACIENTES <= 99999999),
+	CONSTRAINT CK_NOMBRE_PACIENTE CHECK(NOMBRE_PACIENTE LIKE '%[^A-Za-z]%'),
+	CONSTRAINT CK_EDAD_PACIENTE CHECK(EDAD>0 AND EDAD <=95),
+	CONSTRAINT CK_TELEFONO_PACIENTE CHECK(TELEFONO BETWEEN 0 AND 9999999999),
+	CONSTRAINT CK_TELEFONOCEL_PACIENTE CHECK(TELEFONO_CELULAR BETWEEN 0 AND 9999999999),
+	CONSTRAINT CK_GENERO_PACIENTE CHECK(GENERO IN ('M','F','N'))
+	)
+
+CREATE TABLE CONSULTA(
+	ID_CONSULTA INT NOT NULL,
+	ID_MEDICOS INT NOT NULL,
+	ID_PACIENTES INT NOT NULL,
+	FECHA DATE NOT NULL,
+	COMENTARIOS VARCHAR(100),
+	CONSTRAINT PK_CONSULTA PRIMARY KEY (ID_CONSULTA),
+	CONSTRAINT FK_CONSULTA_MEDICOS FOREIGN KEY (ID_MEDICOS) REFERENCES PERSONAL_MEDICO(ID_MEDICOS),
+	CONSTRAINT FK_CONSULTA_PACIENTE FOREIGN KEY (ID_PACIENTES) REFERENCES PACIENTES(ID_PACIENTES)
+	)
+
+CREATE TABLE RECETA(
+	ID_RECETA INT NOT NULL,
+	ID_CONSULTA INT NOT NULL,
+	MARCA VARCHAR(20) NOT NULL,
+	COMENTARIOS VARCHAR(50) NOT NULL,
+	FECHA_RECETA DATE NOT NULL,
+	CONSTRAINT PK_RECETA PRIMARY KEY (ID_RECETA),
+	CONSTRAINT FK_RECETA_CONSULTA FOREIGN KEY (ID_CONSULTA) REFERENCES CONSULTA(ID_CONSULTA)
+	)
+
+
+--1. Crear un procedimiento almacenado que permita la carga por parámetros de cada uno de los objetos de datos definidos (médicos, pacientes, consultas, recetas, entre otros)
+--Procedure Consulta
+create procedure add_consulta @idConsulta int, @idMedicos int, @idPacientes int, @fecha date, @comentarios varchar(100)
+as 
+insert into Consulta (Id_consulta, Id_medicos, Id_pacientes, fecha, comentarios) values (@idConsulta, @idMedicos, @idPacientes, @fecha, @comentarios);
+
+exec add_consulta 10, 1, 1, '2022-10-17', 'El paciente tenia un problema en la pierna'
+
+--Procedure Pacientes
+create procedure add_paciente @idPacientes int, @nombrePacientes varchar(20), @edad int, @nSS varchar(30), @direccion varchar(30), @telefono bigint, @telefonoCelular bigint, @email varchar(50), @genero char(1)
+as
+insert into PACIENTES (ID_PACIENTES, NOMBRE_PACIENTE, EDAD, N_SS, DIRECCION, TELEFONO, TELEFONO_CELULAR, EMAIL, GENERO) values (@idPacientes, @nombrePacientes, @edad, @nSS, @direccion, @telefono, @telefonoCelular, @email, @genero);
+
+
+exec add_paciente 1, 'Miguel Juarez', 32, 'N8LP01MA', 'Cochabamba 511', 42908080 , 1127386167, 'miguelzito123@gmail.com', 'M';
+
+--Procedure Personal Medico
+create procedure add_personal_medico @idMedicos int, @nombrePersonal varchar(30), @profesion varchar(30), @genero char(1), @fechaIncorporacion date
+as
+insert into PERSONAL_MEDICO (ID_MEDICOS, NOMBRE_PERSONAL, PROFESION, GENERO, FECHA_INCORPORACION) values (@idMedicos, @nombrePersonal, @profesion, @genero, @fechaIncorporacion);
+
+exec add_personal_medico 1, 'Raul Gimenez', 'Medico General', 'M', '2020-07-16'
+
+--Procedure Receta
+create procedure add_receta @idReceta int, @idConsulta int, @marca varchar(30), @comentarios varchar(50), @fechaReceta date
+as
+insert into RECETA (ID_RECETA, ID_CONSULTA, MARCA, COMENTARIOS, FECHA_RECETA) values (@idReceta, @idConsulta, @marca, @comentarios, @fechaReceta);
+
+exec add_receta 1, 10, 'Ibuprofeno', 'Tomar cada 8 horas para calmar el dolor', '2022-10-27'
+
+--2. Insertar 10 filas para cada tabla con datos de prueba desde dichos procedimientos.
+
+--Pacientes
+exec add_paciente 1, 'Miguel Juarez', 32, 'N8LP01MA', 'Cochabamba 511', 42908080 , 1127386167, 'miguelzito123@gmail.com', 'M';
+exec add_paciente 2, 'Terri Mann', 23, '2A9i9Z0v', 'North John', 80742022, 1469294085, 'erica21@gmail.com', 'M';
+exec add_paciente 3, 'Antonio Richard', 62, '5P9w2r3P', 'New Heather', 71215749, 690230752, 'ryaneaton@gmail.com', 'M'
+exec add_paciente 4, 'Jonathan Perry', 31, '9o5G8R3D', 'Ryanchester', 43725932, 288982108, 'dhill@gmail.com', 'M'
+exec add_paciente 5, 'Mr. Dustin Perkins', 33, '7t6b2d1e', 'West Kaitlynfurt', 51304562, 483158374, 'aaronhodge@gmail.com', 'M'
+exec add_paciente 6, 'Miranda Miller', 29, '5r5J0G6f', 'North Scott', 70035614, 385806863, 'tabithaandrade@gmail.com', 'F'
+exec add_paciente 7, 'James Smith', 56, '6z5g6v0S', 'Thomasfurt', 15016653, 982874932, 'dwarner@gmail.com', 'M'
+exec add_paciente 8, 'Lauren Morris', 23, '0D6v5S7x', 'New Melissa', 76755057, 477653150, 'sharonmartin@gmail.com', 'F'
+exec add_paciente 9, 'Katherine Galloway', 40, '1g8g2J9C', 'North Davidburgh', 10163929, 265859058, 'tlee@gmail.com', 'F'
+exec add_paciente 10, 'Sarah Jensen', 64, '2d6I7C9Z', 'Pricechester', 75377810, 332086962, 'cannonregina@gmail.com', 'F'
+
+select * from PACIENTES
+
+--Personal Medico
+
+exec add_personal_medico 1, 'Raul Gimenez', 'Medico General', 'M', '2020-07-16'
+exec add_personal_medico 2, 'Keith Robinson', 'Medico Especialista', 'M', '2023-06-18'
+exec add_personal_medico 3, 'Sara Webb', 'Medico General', 'M', '2020-04-09'
+exec add_personal_medico 4, 'Bridget Williams', 'Enfermera', 'M', '2022-10-10'
+exec add_personal_medico 5, 'Sean Harris', 'Medico General', 'M', '2020-04-03'
+exec add_personal_medico 6, 'Jeffrey Rose', 'Medico Especialista', 'M', '2022-12-08'
+exec add_personal_medico 7, 'Tony Webb', 'Enfermera', 'M', '2023-08-19'
+exec add_personal_medico 8, 'Tonya Webster', 'Medico Especialista', 'M', '2020-08-10'
+exec add_personal_medico 9, 'Samantha Hines', 'Medico General', 'M', '2021-03-04'
+exec add_personal_medico 10, 'Joseph Reed', 'Enfermera', 'M', '2023-10-07'
+
+select * from PERSONAL_MEDICO
+
+--Consulta
+
+exec add_consulta 10, 1, 1, '2022-10-17', 'El paciente tenia un problema en la pierna'
+exec add_consulta 20, 2, 2, '2023-10-16', 'Full say seem entire eight.'
+exec add_consulta 30, 3, 3, '2022-04-24', 'Parent financial front child certain fish pass.'
+exec add_consulta 40, 4, 4, '2023-10-02', 'Subject me people catch evening occur watch.'
+exec add_consulta 50, 5, 5, '2022-12-23', 'Foot character country think health picture.'
+exec add_consulta 60, 6, 6, '2020-09-07', 'Letter degree church himself right call.'
+exec add_consulta 70, 7, 7, '2022-06-30', 'Suffer vote government power military piece.'
+exec add_consulta 80, 8, 8, '2022-01-14', 'Push your rule subject certain report.'
+exec add_consulta 90, 9, 9, '2022-07-23', 'Pick bar level matter hair.'
+exec add_consulta 100, 10, 10, '2021-04-17', 'Popular east institution hotel.'
+exec add_consulta 300, 6, 14, '2022-09-17', 'Unpopular north institution hotel.'
+
+
+select * from CONSULTA
+
+--Receta
+
+exec add_receta 1, 10, 'Ibuprofeno', 'Tomar cada 8 horas para calmar el dolor', '2022-10-27'
+exec add_receta 2, 20, 'Merck', 'Again arm market court light effort.', '2022-07-22'
+exec add_receta 3, 30, 'Merck', 'Expert seven care stage outside travel.', '2020-08-04'
+exec add_receta 4, 40, 'Merck', 'Particularly party knowledge writer economy not.', '2021-03-18'
+exec add_receta 5, 50, 'Merck', 'Natural may reason.', '2023-01-20'
+exec add_receta 6, 60, 'Merck', 'Future thing fact center she structure.', '2023-06-05'
+exec add_receta 7, 70, 'Roche Group', 'Reduce fact surface indicate present.', '2021-09-15'
+exec add_receta 8, 80, 'Roche Group', 'State door degree nothing bad plan safe partner.', '2021-08-21'
+exec add_receta 9, 90, 'Pfizer', 'Week week work toward.', '2023-11-09'
+exec add_receta 10, 100, 'Merck', 'Give one loss ground various.', '2023-12-02'
+
+select * from RECETA
+
+--3. Crear todos los procedimientos almacenados necesarios que permitan actualizar los datos de médicos, pacientes, consultas y recetas según los parámetros que reciban, respetando las reglas de integridad definidas
+
+--Pacientes
+create procedure update_pacientes @idPacientes int, @nombrePaciente varchar(30), @edad int, @nSS varchar(40), @direccion varchar(40), @telefono int, @telefonoCelular int, @mail varchar(30), @genero char(1)
+as 
+begin
+update PACIENTES 
+set ID_PACIENTES = @idPacientes, NOMBRE_PACIENTE = @nombrePaciente, EDAD = @edad, N_SS = @nSS, DIRECCION = @direccion, TELEFONO = @telefono, TELEFONO_CELULAR = @telefonoCelular, EMAIL = @mail, GENERO = @genero
+where ID_PACIENTES = @idPacientes
+end
+
+--Personal Medico
+
+create procedure update_personal_medico @idMedicos int, @nombrePersonal varchar(30), @profesion varchar(30), @genero char(1), @fechaIncorporacion date
+as
+begin
+update PERSONAL_MEDICO
+set ID_MEDICOS = @idMedicos, NOMBRE_PERSONAL = @nombrePersonal, PROFESION = @profesion, GENERO = @genero, FECHA_INCORPORACION = @fechaIncorporacion
+where ID_MEDICOS = @idMedicos
+end
+
+--Consulta
+
+create procedure update_consulta @idConsulta int, @idMedicos int, @idPacientes int, @fecha date, @comentarios varchar(50)
+as
+begin
+update CONSULTA 
+set ID_CONSULTA = @idConsulta, ID_MEDICOS = @idMedicos, ID_PACIENTES = @idPacientes, FECHA = @fecha, COMENTARIOS = @comentarios
+where ID_CONSULTA = @idConsulta
+end
+
+--Receta
+
+create procedure update_receta @idReceta int, @idConsulta int, @marca varchar(30), @comentarios varchar(30), @fechaReceta date
+as
+begin
+update RECETA 
+set ID_RECETA = @idReceta, ID_CONSULTA = @idReceta, MARCA = @marca, COMENTARIOS = @comentarios, FECHA_RECETA = @fechaReceta
+where ID_RECETA = @idReceta
+end
+
+--4. Generar un procedimiento almacenado que invoque una serie de procedimientos para limpiar las tablas creadas, respetando las reglas de integridad definidas.
+
+--Pacientes
+create procedure limpiar_pacientes
+as
+begin
+delete from PACIENTES
+end
+
+--Personal Medico
+create procedure limpiar_personal_medico
+as
+begin
+delete from PERSONAL_MEDICO
+end
+
+--Consulta
+create procedure limpiar_consulta
+as 
+begin
+delete from CONSULTA
+end
+
+--Receta
+create procedure limpiar_receta
+as
+begin
+delete from RECETA
+end
+
+--Limpiar Todas las tablas en el orden correcto
+create procedure limpiar_tablas
+as
+begin
+exec limpiar_receta
+exec limpiar_consulta
+exec limpiar_pacientes
+exec limpiar_personal_medico
+end
+
+exec limpiar_tablas
+
+--5. Mostrar el nombre y nº de la seguridad social de los pacientes que aún no han hecho ni una sola consulta.
+
+select NOMBRE_PACIENTE as PACIENTES_SIN_CONSULTAS, N_SS from PACIENTES where PACIENTES.ID_PACIENTES not in(select CONSULTA.ID_PACIENTES from CONSULTA)
+
+--6. Mostrar el nombre de los profesionales Médicos que han tenido consulta con él paciente número 205
+
+select PERSONAL_MEDICO.NOMBRE_PERSONAL from PERSONAL_MEDICO where PERSONAL_MEDICO.ID_MEDICOS in(select CONSULTA.ID_MEDICOS from CONSULTA where ID_PACIENTES = 205)
+
+--7 Pacientes (nombre e identificador) que no han tenido consulta con ningún enfermero o enfermera
+
+select NOMBRE_PACIENTE, PC.ID_PACIENTES from PACIENTES as PC where PC.ID_PACIENTES in (select ID_PACIENTES from (CONSULTA as C join PERSONAL_MEDICO as PM on C.ID_MEDICOS = PM.ID_MEDICOS) where not PROFESION = 'Enfermera')
+
+--8.	Pacientes (nombre e identificador) que han tenido consulta con el personal médico número 183 y número 230.
+
+select NOMBRE_PACIENTE, PC.ID_PACIENTES from PACIENTES as PC inner join CONSULTA as C on PC.ID_PACIENTES = C.ID_PACIENTES where C.ID_MEDICOS in (183, 230) group by PC.ID_PACIENTES, PC.NOMBRE_PACIENTE having count(distinct C.ID_MEDICOS) = 2;
+
+--9. Pacientes (nombre e identificador) a los que nunca se les ha recetado nada.
+
+select NOMBRE_PACIENTE, PC.ID_PACIENTES from PACIENTES as PC where PC.ID_PACIENTES not in(select C.ID_MEDICOS from(CONSULTA as C inner join RECETA as R on C.ID_CONSULTA = R.ID_CONSULTA))
+
+--10. Pacientes que han ido a consulta todos los meses
+
+select PC.ID_PACIENTES, NOMBRE_PACIENTE from PACIENTES PC inner join CONSULTA C on PC.ID_PACIENTES = C.ID_PACIENTES group by PC.ID_PACIENTES, NOMBRE_PACIENTE having count(distinct datepart(month, C.FECHA)) = 12;
+
+--11. Pacientes que no han ido a consulta en todo el año 2005.
+
+select PC.ID_PACIENTES from PACIENTES as PC where PC.ID_PACIENTES not in (select C.ID_PACIENTES from CONSULTA as C where year(FECHA) = '2005')
+
+--12. Pacientes menores de 36 años que asistieron a consulta y no se les receto nada.
+
+select PC.ID_PACIENTES, NOMBRE_PACIENTE from PACIENTES as PC join CONSULTA as C on PC.ID_PACIENTES = C.ID_PACIENTES  where C.ID_CONSULTA not in(select R.ID_CONSULTA from RECETA as R) and PC.EDAD < 35 group by PC.ID_PACIENTES, NOMBRE_PACIENTE
+
+--13. Edad promedio de los pacientes atendidos por Médicos Especialistas, en el año 2022.
+
+select avg(distinct EDAD) as EdadPromedio from  PACIENTES as PC join CONSULTA as C on PC.ID_PACIENTES = C.ID_PACIENTES join PERSONAL_MEDICO as PM on PM.ID_MEDICOS = C.ID_MEDICOS where PROFESION = 'Medico Especialista' and year(FECHA) = 2022 
+
+--14. Indicar el nombre del paciente de mayor edad atendido en el año 2022.
+
+select NOMBRE_PACIENTE from PACIENTES as PC where PC.EDAD = (select max(edad) from PACIENTES as PC join CONSULTA as C on PC.ID_PACIENTES = C.ID_PACIENTES where year(FECHA) = 2022)
+
+--15. Crear una vista de la consulta de pacientes que no hayan sido atendido durante el año 2022 y que sean jubilados (según norma Argentina para que sea jubilado el hombre deberá ser mayor de 65 años y las mujeres mayores de 60 años)
+
+create view jubilados_no_atendidos_2022 as
+select C.ID_PACIENTES from CONSULTA as C join PACIENTES as PC on C.ID_PACIENTES = PC.ID_PACIENTES where not year(FECHA) = 2022 and ((EDAD > 60 and GENERO = 'F') or (EDAD > 65 and GENERO = 'M'))
+
+--16. Indicar los pacientes que tienen de alguna letra F y que hayan sido atendido durante el 2020
+
+select PC.ID_PACIENTES, NOMBRE_PACIENTE from PACIENTES as PC join CONSULTA as C on PC.ID_PACIENTES = C.ID_PACIENTES where NOMBRE_PACIENTE like '%f%' or NOMBRE_PACIENTE like '%F%' and year(FECHA) = 2020
+
+--17. Indicar los Médicos especialistas que contengan la letra s y que hayan atendido durante el 2021.
+
+select PM.ID_MEDICOS, NOMBRE_PERSONAL from PERSONAL_MEDICO as PM join CONSULTA as C on PM.ID_MEDICOS = C.ID_MEDICOS where PROFESION = 'Medico Especialista' and (NOMBRE_PERSONAL like '%s%' or NOMBRE_PERSONAL like '%S%') and year(FECHA) = '2021'
+
+--18. Por cuestiones de optimización de la base de datos se necesita eliminar las consultas que se han realizado durante la década del 90, desarrollar un procedimiento almacenado que lo permita.
+
+create procedure eliminar_consultas_decada_90 @anioInicio int, @anioFinal int
+as
+begin
+delete from CONSULTA where year(FECHA) between @anioInicio and @anioFinal
+end
+
+exec eliminar_consultas_decada_90 1990, 2000
+
+--19. Con el uso de procedimientos almacenados que reciban las fechas por parámetros, indicar aquellos pacientes con sus respectivos doctores que se han atendido entre el 01/01/2020 y el 31/08/2020 (fecha referencial)
+
+create procedure pacientes_atendidos_fechas @fechaInicial date, @fechaFinal date
+as
+begin
+select id_pacientes, id_medicos from CONSULTA where FECHA between @fechaInicial and @fechaFinal
+end
+
+exec pacientes_atendidos_fechas '2020-01-01', '2021-12-31'
+
+--20. Indicar aquellos pacientes que se les ha recetado al menos una receta durante el año pasado.
+
+select C.ID_PACIENTES from CONSULTA as C join RECETA as R on C.ID_CONSULTA = R.ID_CONSULTA where year(FECHA_RECETA) = (DATEPART(yy, CURRENT_TIMESTAMP) - 1)
+
+--21. Indicar aquellas enfermeras que se incorporaron durante el 2020
+
+select NOMBRE_PERSONAL from PERSONAL_MEDICO where year(FECHA_INCORPORACION) = 2020 and PROFESION = 'Enfermera'
+
+--22. Desde una vista, Indicar médicos (tanto especialista como general) que se han incorporado entre el 2005 y el 2008
+
+create view medicos_2005_2008
+as
+select NOMBRE_PERSONAL from PERSONAL_MEDICO where year(FECHA_INCORPORACION) between 2005 and 2008 and PROFESION in ('Medico Especialista', 'Medico General');
+
+--23. Indicar todos los pacientes que no se han atendido este año y que sus datos empiecen con la letra R
+
+select nombre_paciente from PACIENTES as PC join CONSULTA as C on PC.ID_PACIENTES = C.ID_PACIENTES where year(FECHA) <> DATEPART(yy, CURRENT_TIMESTAMP) and NOMBRE_PACIENTE like 'R%'
+
+--24. Indicar todos los pacientes que no se han atendido durante el 2020 o que sus datos contengan la letra s
+
+select nombre_paciente from PACIENTES as PC join CONSULTA as C on PC.ID_PACIENTES = C.ID_PACIENTES where year(FECHA) <> 2020 or (NOMBRE_PACIENTE like '%s%' or NOMBRE_PACIENTE like '%s%')
+
+--25. Desde una vista mostrar todos los médicos especialistas que se han incorporado en el 2005 y que sus datos tengan al menos una vocal
+
+create view medicos_2005_vocal
+as
+select NOMBRE_PERSONAL from PERSONAL_MEDICO where year(FECHA_INCORPORACION) = 2005 and NOMBRE_PERSONAL like '%[aeiou]%' and PROFESION = 'Medico Especialista'
+
+--26. Mostrar la cantidad de visitas que tuvo cada paciente
+
+select ID_PACIENTES, count(ID_CONSULTA) as cantidadConsultas from CONSULTA group by ID_PACIENTES
+ 
+--27. Desde una vista, mostrar la cantidad de consultas que tuvieron cada Médicos (Especialistas y General)
+
+select PROFESION, count(ID_CONSULTA) as CantidadConsultas from PERSONAL_MEDICO as PM join CONSULTA as C on PM.ID_MEDICOS = C.ID_MEDICOS where PROFESION = 'Medico General' or PROFESION = 'Medico Especialista' group by PROFESION
+
+--28. Mostrar la cantidad de veces que ha ido el paciente al consultorio
+
+select count(ID_CONSULTA) as CantidadVisitasConsultorio from CONSULTA
+
+--29. Mostrar aquellos pacientes que han declarado el e-mail para que le llegue la receta a su casilla de correo electrónico.
+
+select ID_PACIENTES, NOMBRE_PACIENTE, EMAIL from PACIENTES
+
+--30. Finalmente construya 4 tablas con por lo menos 5 atributos referentes al contexto y construir el modelo señalado en SQL, creando los dominios correctos para cada atributo y luego: 
+
+
+CREATE TABLE HOSPITALES (
+	ID_HOSPITAL INT NOT NULL,
+	NOMBRE_HOSPITAL VARCHAR(50) NOT NULL,
+	DIRECCION VARCHAR(100) NOT NULL,
+	TELEFONO VARCHAR(15) NOT NULL,
+	EMAIL VARCHAR(50),
+	CONSTRAINT PK_HOSPITAL PRIMARY KEY (ID_HOSPITAL)
+);
+
+alter table PERSONAL_MEDICO
+add ID_HOSPITAL
+add constraint FK_PERSONAL_HOSPITALES foreign key (ID_HOSPITAL)
+references HOSPITALES(ID_HOSPITAL);
+
+CREATE TABLE CITAS (
+	ID_CITA INT NOT NULL,
+	ID_PACIENTES INT NOT NULL,
+	FECHA_HORA DATETIME NOT NULL,
+	MOTIVO VARCHAR(100),
+	ESTADO VARCHAR(20) NOT NULL,
+	CONSTRAINT PK_CITA PRIMARY KEY (ID_CITA),
+	CONSTRAINT FK_CITA_PACIENTES FOREIGN KEY (ID_PACIENTES) REFERENCES PACIENTES(ID_PACIENTES)
+);
+
+CREATE TABLE EXAMENES (
+	ID_EXAMEN INT NOT NULL,
+	ID_PACIENTES INT NOT NULL,
+	NOMBRE_EXAMEN VARCHAR(50) NOT NULL,
+	RESULTADO VARCHAR(100),
+	FECHA_EXAMEN DATE NOT NULL,
+	CONSTRAINT PK_EXAMEN PRIMARY KEY (ID_EXAMEN),
+	CONSTRAINT FK_EXAMEN_PACIENTES FOREIGN KEY (ID_PACIENTES) REFERENCES PACIENTES(ID_PACIENTES)
+);
+
+CREATE TABLE MEDICAMENTOS (
+	ID_MEDICAMENTO INT NOT NULL,
+	NOMBRE_MEDICAMENTO VARCHAR(50) NOT NULL,
+	DESCRIPCION VARCHAR(100),
+	FABRICANTE VARCHAR(50),
+	FECHA_VENCIMIENTO DATE NOT NULL,
+	CONSTRAINT PK_MEDICAMENTO PRIMARY KEY (ID_MEDICAMENTO)
+);
+
+alter table RECETA
+add ID_MEDICAMENTO
+add constraint FK_RECETA_MEDICAMENTO foreign key (ID_MEDICAMENTO)
+references MEDICAMENTOS(ID_MEDICAMENTO)
+
+
+--30 A. Crear un procedimiento almacenado que permita la carga por parámetros de cada uno de los objetos de datos definidos (médicos, pacientes, consultas, recetas, entre otros)
+--HOSPITALES
+create procedure add_hospital @idHospital int, @nombreHospital varchar(30), @direccion varchar(30), @telefono int, @email varchar(30)
+as 
+insert into HOSPITALES (ID_HOSPITAL, NOMBRE_HOSPITAL, DIRECCION, TELEFONO, EMAIL ) values (@idHospital, @nombreHospital, @direccion, @telefono, @email);
+
+--CITAS
+create procedure add_cita @idCita int, @idPaciente int, @fechaHora datetime, @motivo varchar(100), @estado varchar(20)
+as 
+insert into CITAS (ID_CITA, ID_PACIENTES, FECHA_HORA, MOTIVO, ESTADO) values (@idCita, @idPaciente, @fechaHora, @motivo, @estado);
+
+--EXAMENES
+create procedure add_examen @idExamen int, @idPaciente int, @nombreExamen varchar(50), @resultado varchar(100), @fechaExamen date
+as 
+insert into EXAMENES (ID_EXAMEN, ID_PACIENTES, NOMBRE_EXAMEN, RESULTADO, FECHA_EXAMEN) values (@idExamen, @idPaciente, @nombreExamen, @resultado, @fechaExamen);
+
+--MEDICAMENTOS
+create procedure add_medicamento @idMedicamento int, @nombreMedicamento varchar(50), @descripcion varchar(100), @fabricante varchar(50), @fechaVencimiento date
+as 
+insert into MEDICAMENTOS (ID_MEDICAMENTO, NOMBRE_MEDICAMENTO, DESCRIPCION, FABRICANTE, FECHA_VENCIMIENTO) values (@idMedicamento, @nombreMedicamento, @descripcion, @fabricante, @fechaVencimiento);
+
+--30 B. Insertar 10 filas para cada tabla con datos de prueba desde dichos procedimientos.
+
+--HOSPITALES 
+
+exec add_hospital 1, 'Hospital Burns', 'South Ryan', 04996704, 'heather77@gmail.com'
+exec add_hospital 2, 'Healthcare Webster', 'Bowersmouth', 87707417, 'renee88@gmail.com'
+exec add_hospital 3, 'Hospital Young', 'East Gregory', 17909039, 'lynchlindsey@gmail.com'
+exec add_hospital 4, 'Hospital Phillips', 'Laurastad', 05280873, 'lduarte@gmail.com'
+exec add_hospital 5, 'Hospital Howard', 'East Shawnview', 90100148, 'srosales@gmail.com'
+exec add_hospital 6, 'Hospital Nguyen', 'East Scott', 22528287, 'cooperdaniel@gmail.com'
+exec add_hospital 7, 'Clinic Hill', 'Port Tracyside', 56642170, 'shannon41@gmail.com'
+exec add_hospital 8, 'Medical Center Brock', 'Katieburgh', 78483673, 'hmorgan@gmail.com'
+exec add_hospital 9, 'Healthcare Mcdonald', 'New Ralphview', 63616812, 'robertbrown@gmail.com'
+exec add_hospital 10, 'Clinic Hartman', 'Lake Robert', 85965219, 'zyoder@gmail.com'
+
+--CITAS
+
+exec add_cita 1, 1, '2022-09-15 23:11:31', 'Section light perform reason event fund.', 'Pendiente'
+exec add_cita 2, 2, '2020-01-16 04:22:53', 'Focus fast actually without young.', 'Completada'
+exec add_cita 3, 3, '2021-04-29 03:51:34', 'Ahead perhaps ground purpose exactly.', 'Completada'
+exec add_cita 4, 4, '2020-04-25 16:09:30', 'Deep use station public.', 'Confirmada'
+exec add_cita 5, 5, '2022-02-01 01:40:37', 'Floor nothing near realize response.', 'Pendiente'
+exec add_cita 6, 6, '2020-12-24 17:58:31', 'Simple rest station of car admit successful.', 'Completada'
+exec add_cita 7, 7, '2022-03-25 08:12:20', 'Each think every.', 'Cancelada'
+exec add_cita 8, 8, '2020-07-17 14:31:59', 'Rather land mother style oil.', 'Pendiente'
+exec add_cita 9, 9, '2020-11-25 09:11:40', 'Everybody energy manager establish.', 'Completada'
+exec add_cita 10, 10, '2021-06-17 23:51:43', 'Sure year question.', 'Pendiente'
+
+--EXAMENES
+
+exec add_examen 1, 1, 'Análisis de sangre', 'Him water political sister yes fine stage information force.', '2022-04-10'
+exec add_examen 2, 2, 'Electrocardiograma', 'Strategy tough administration big campaign camera generation wonder safe establish argue go.', '2023-06-21'
+exec add_examen 3, 3, 'Radiografía de tórax', 'Member performance behavior reality message fly clear yeah film beyond sister young.', '2022-02-13'
+exec add_examen 4, 4, 'Radiografía de tórax', 'Small single system former wish agree doctor one lawyer establish nation forward almost.', '2021-02-23'      
+exec add_examen 5, 5, 'Análisis de sangre', 'Because training education late front institution total this provide interest.', '2022-07-27'
+exec add_examen 6, 6, 'Radiografía de tórax', 'Take economic able general concern radio animal a food.', '2023-02-19'
+exec add_examen 7, 7, 'Ecografía abdominal', 'Particularly foreign especially media person beat resource may recognize child.', '2021-05-20'
+exec add_examen 8, 8, 'Radiografía de tórax', 'Television report budget medical institution clearly ok.', '2021-12-28'
+exec add_examen 9, 9, 'Electrocardiograma', 'Republican speech instead expert success give inside.', '2022-07-13'
+exec add_examen 10, 10, 'Ecografía abdominal', 'Management small month see pay special make response alone along appear.', '2023-01-30'
+
+
+--MEDICAMENTOS
+
+exec add_medicamento 1, 'MediPro', 'Bag wall focus represent as.', 'HealLife', '2020-03-01'
+exec add_medicamento 2, 'Vitalin', 'Star pick I wish work.', 'VitaMed', '2020-12-20'
+exec add_medicamento 3, 'MediPro', 'New brother beautiful.', 'HealLife', '2023-06-25'
+exec add_medicamento 4, 'Panadol', 'Throw since really in.', 'PharmaCorp', '2021-01-30'
+exec add_medicamento 5, 'Remedex', 'Industry western deal admit type.', 'CuraPharm', '2022-03-28'
+exec add_medicamento 6, 'Calmol', 'State sea air order job listen.', 'CureMed', '2022-05-03'
+exec add_medicamento 7, 'Calmol', 'Successful nothing participant ahead coach west.', 'CureMed', '2021-04-06'
+exec add_medicamento 8, 'Calmol', 'Fire audience country own toward.', 'CureMed', '2020-12-23'
+exec add_medicamento 9, 'Calmol', 'Activity student tend argue skin.', 'CureMed', '2022-03-03'
+exec add_medicamento 10, 'Panadol', 'Customer claim nothing tonight ready behind.', 'PharmaCorp', '2020-06-30'
+
+--30 C. Crear todos los procedimientos almacenados necesarios que permitan actualizar los datos de médicos, pacientes, consultas y recetas según los parámetros que reciban, respetando las reglas de integridad definidas.
+--HOSPITALES
+
+create procedure update_hospitales @idHospital int, @nombreHospital varchar(30), @direccion varchar(30), @telefono int, @email varchar(30)
+as 
+begin
+update HOSPITALES
+set ID_HOSPITAL = @idHospital, NOMBRE_HOSPITAL = @nombreHospital, DIRECCION = @direccion, TELEFONO = @telefono, EMAIL = @email
+where ID_HOSPITAL = @idHospital
+end
+
+--CITAS
+
+create procedure update_citas @idCita int, @idPaciente int, @fechaHora datetime, @motivo varchar(100), @estado varchar(20)
+as 
+begin
+update CITAS
+set ID_CITA = @idCita, ID_PACIENTES = @idPaciente, FECHA_HORA = @fechaHora, MOTIVO = @motivo, ESTADO = @estado
+where ID_CITA = @idCita
+end
+
+--EXAMENES
+
+create procedure update_examen @idExamen int, @idPacientes int, @nombreExamen varchar(50), @resultado varchar(100), @fecha_examen date
+as 
+begin
+update EXAMENES
+set ID_EXAMEN = @idExamen, ID_PACIENTES = @idPacientes, NOMBRE_EXAMEN = @nombreExamen, RESULTADO = @resultado, FECHA_EXAMEN = @fecha_examen
+where ID_EXAMEN = @idExamen
+end
+
+--MEDICAMENTOS
+
+create procedure update_medicamento @idMedicamento int, @nombreMedicamento varchar(50), @descripcion varchar(100), @fabricante varchar(50), @fechaVencimiento date
+as 
+begin
+update MEDICAMENTOS
+set ID_MEDICAMENTO = @idMedicamento, NOMBRE_MEDICAMENTO = @nombreMedicamento, DESCRIPCION = @descripcion, FABRICANTE = @fabricante, FECHA_VENCIMIENTO = @fechaVencimiento
+where ID_MEDICAMENTO = @idMedicamento
+end
+
+--30 D. Generar un procedimiento almacenado que invoque una serie de procedimientos para limpiar las tablas creadas, respetando las reglas de integridad definidas.
+
+--HOSPITALES
+create procedure limpiar_hospitales
+as
+begin
+delete from HOSPITALES
+end
+
+--CITAS
+create procedure limpiar_citas
+as
+begin
+delete from CITAS
+end
+
+--EXAMENES
+create procedure limpiar_examenes
+as 
+begin
+delete from EXAMENES
+end
+
+--MEDICAMENTO
+create procedure limpiar_medicamentos
+as
+begin
+delete from MEDICAMENTOS
+end
+
+--Limpiar Todas las tablas en el orden correcto
+create procedure limpiar_tablas2
+as
+begin
+exec limpiar_hospitales
+exec limpiar_citas
+exec limpiar_examenes
+exec limpiar_medicamentos
+end
+
+--30 E.	Desarrollar 7 consultas en vistas con el modelo definido que abarquen el uso de las 8 tablas.
+
+create view medicamentos_usados as
+select ID_MEDICAMENTO from MEDICAMENTOS where ID_MEDICAMENTO in(select ID_MEDICAMENTO from RECETA)
+
+create view medicos_hospital_3 as
+select ID_MEDICOS from PERSONAL_MEDICO where ID_HOSPITAL = 3
+
+create view hospitales_mail_gmail as
+select ID_HOSPITAL from HOSPITALES where EMAIL like '%@gmail.com'
+
+create view examenes_menores_30 as
+select ID_PACIENTES from EXAMENES where ID_PACIENTES in (select ID_PACIENTES from PACIENTES where EDAD <= 30)
+
+create view citas_completada as
+select ID_CITA from CITAS where ESTADO = 'Completada'
+
+create view citas_antes_2022_despues_2020 as
+select ID_CITA from CITAS where year(FECHA_HORA) between '2020' and '2022'
+
+create view examen_sangre_jubilados as
+select ID_EXAMEN from EXAMENES where NOMBRE_EXAMEN = 'Análisis de sangre' and ID_PACIENTES in(select ID_PACIENTES from PACIENTES where EDAD >= 60)
